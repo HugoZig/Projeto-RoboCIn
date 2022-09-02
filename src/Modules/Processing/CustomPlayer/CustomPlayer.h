@@ -18,7 +18,9 @@ class CustomPlayer : public Processing {
  private:
   struct Args {
     Parameters::Arg<int> openning = 9;
-    Parameters::Arg<int> dist = 2;
+    Parameters::Arg<int> dist = 8;   // 2 na parabola
+    Parameters::Arg<int> chis = 10;  // 15
+    Parameters::Arg<int> ipslon = 8; // 10
   };
   Args args;
 

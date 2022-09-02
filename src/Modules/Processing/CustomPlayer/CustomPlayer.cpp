@@ -7,6 +7,8 @@ void CustomPlayer::buildParameters(Parameters::Handler& parameters) {
   using namespace Parameters;
   parameters["Openning"] = Text<int>(args.openning);
   parameters["Distance"] = Text<int>(args.dist);
+  parameters["chis"] = Text<int>(args.chis);
+  parameters["ipslon"] = Text<int>(args.ipslon);
 }
 
 void CustomPlayer::connectModules(const Modules* modules) {
@@ -47,30 +49,56 @@ Point bolaPos = {};
 Point playerPos = {};
 short int estagnado = 0;
 
-std::vector<Point> CustomPlayer::calculaPathTop(Extends<QPointF> bola) {
-  std::vector<Point> temp{};
-  double i = 0;
-  double bx = bola.x() - args.dist;
-  double by = bola.y();
-  double jy = by + args.openning;
+// std::vector<Point> CustomPlayer::calculaPathTop(Extends<QPointF> bola) {
+//   std::vector<Point> temp{};
+//   double i = 0;
+//   double bx = bola.x() - args.dist;
+//   double by = bola.y();
+//   double jy = by + args.openning;
 
-  for (i = jy; i > by; i -= 1) {
-    Point holder((i * i - i * (2 * by + args.openning) + (bx + by * by - by * (-args.openning))),
-                 i);
-    temp.emplace_back(holder);
-  }
-  return temp;
-}
+//   for (i = jy; i > by; i -= 1) {
+//     Point holder((i * i - i * (2 * by + args.openning) + (bx + by * by - by * (-args.openning))),
+//                  i);
+//     temp.emplace_back(holder);
+//   }
+//   return temp;
+// }
+
+// std::vector<Point> CustomPlayer::calculaPathBot(Extends<QPointF> bola) {
+//   std::vector<Point> temp{};
+//   double i = 0;
+//   double bx = bola.x() - args.dist;
+//   double by = bola.y();
+//   double jy = by - args.openning;
+
+//   for (i = jy; i < by; i += 1) {
+//     Point holder((i * i - i * (2 * by - args.openning) + (bx + by * by - by * args.openning)),
+//     i); temp.emplace_back(holder);
+//   }
+//   return temp;
+// }
 
 std::vector<Point> CustomPlayer::calculaPathBot(Extends<QPointF> bola) {
   std::vector<Point> temp{};
   double i = 0;
   double bx = bola.x() - args.dist;
   double by = bola.y();
-  double jy = by - args.openning;
+  double jy = by - args.ipslon;
+  for (i = (3 * PI / 2); i > (PI / 2); i -= (PI / 10)) {
+    Point holder((bx + args.chis * cos(i)), (jy + args.ipslon * sin(i)));
+    temp.emplace_back(holder);
+  }
+  return temp;
+}
 
-  for (i = jy; i < by; i += 1) {
-    Point holder((i * i - i * (2 * by - args.openning) + (bx + by * by - by * args.openning)), i);
+std::vector<Point> CustomPlayer::calculaPathTop(Extends<QPointF> bola) {
+  std::vector<Point> temp{};
+  double i = 0;
+  double bx = bola.x() - args.dist;
+  double by = bola.y();
+  double jy = by + args.ipslon;
+  for (i = (3 * PI / 2); i > (PI / 2); i -= (PI / 10)) {
+    Point holder((bx + args.chis * cos(i)), (jy + (-args.ipslon) * sin(i)));
     temp.emplace_back(holder);
   }
   return temp;
@@ -204,7 +232,6 @@ void CustomPlayer::exec() {
         break;
     }
     // qDebug() << "case: " << estado_goleiro
-    //          << "distancia: " << robot->x() - field->enemyGoalOutsideCenter().x();
     switch (estado_goleiro) {
       case 1:
         if (frame->ball().y() >= field->allyGoalOutsideTop().y()) {
@@ -252,13 +279,25 @@ void CustomPlayer::exec() {
   else if (robot->id() == 1) { // Atacante
 
     switch (estado_atacante) {
-      case 1:
-        if (robot->distTo(frame->ball().position()) <= 50) {
+      case 1: // se aproxima da bola
+        if (playerPos.y() >= robot->position().y() - 0.1 &&
+            playerPos.y() <= robot->position().y() + 0.1 &&
+            playerPos.x() <= robot->position().x() + 0.1 &&
+            playerPos.x() >= robot->position().x() - 0.1) {
+          estagnado++;
+        } else {
+          estagnado = 0;
+          playerPos = robot->position();
+        }
+
+        if (estagnado == 8) {
+          estado_atacante = 6;
+        } else if (robot->distTo(frame->ball().position()) <= 50) {
           estado_atacante = 2;
         }
         break;
 
-      case 2:
+      case 2: //  caclula o percurso
         if (robot->distTo(frame->ball().position()) > 50) {
           estado_atacante = 1;
         } else if (((robot->x() <= frame->ball().x()) && (robot->y() <= frame->ball().y() + 5) &&
@@ -268,9 +307,24 @@ void CustomPlayer::exec() {
           estado_atacante = 3;
         break;
 
-      case 3:
-        if (robot->distTo(frame->ball().position()) <= 8.5 && (robot->x() <= frame->ball().x()) &&
-            (robot->y() <= frame->ball().y() + 5) && (robot->y() >= frame->ball().y() - 5)) {
+      case 3: // faz o percurso
+        if (playerPos.y() >= robot->position().y() - 0.5 &&
+            playerPos.y() <= robot->position().y() + 0.5 &&
+            playerPos.x() <= robot->position().x() + 0.5 &&
+            playerPos.x() >= robot->position().x() - 0.5) {
+          estagnado++;
+        } else {
+          estagnado = 0;
+          playerPos = robot->position();
+        } //
+
+        if (estagnado == 8) {
+          estado_atacante = 6;
+        }
+
+        else if (robot->distTo(frame->ball().position()) <= 8.5 &&
+                 (robot->x() <= frame->ball().x()) && (robot->y() <= frame->ball().y() + 5) &&
+                 (robot->y() >= frame->ball().y() - 5)) {
           estado_atacante = 5;
         } else if (bolaPos.y() != frame->ball().y() || bolaPos.x() != frame->ball().x()) {
           bolaPos = frame->ball().position();
@@ -282,8 +336,20 @@ void CustomPlayer::exec() {
         }
         break;
 
-      case 4:
-        if (robot->distTo(frame->ball().position()) > 50) {
+      case 4: // ajusta para pegar a bola
+        if (playerPos.y() >= robot->position().y() - 0.5 &&
+            playerPos.y() <= robot->position().y() + 0.5 &&
+            playerPos.x() <= robot->position().x() + 0.5 &&
+            playerPos.x() >= robot->position().x() - 0.5) {
+          estagnado++;
+        } else {
+          estagnado = 0;
+          playerPos = robot->position();
+        }
+
+        if (estagnado == 4) {
+          estado_atacante = 6;
+        } else if (robot->distTo(frame->ball().position()) > 50) {
           estado_atacante = 1;
         } else if (robot->distTo(frame->ball().position()) <= 8.5 &&
                    (robot->x() <= frame->ball().x()) && (robot->y() <= frame->ball().y() + 5) &&
@@ -292,20 +358,18 @@ void CustomPlayer::exec() {
         }
         break;
 
-      case 5:
+      case 5: // tenta fazer o gol
         if (!(robot->distTo(frame->ball().position()) <= 8.5 && (robot->x() <= frame->ball().x()) &&
               (robot->y() <= frame->ball().y() + 5) && (robot->y() >= frame->ball().y() - 5))) {
           estado_atacante = 2;
         }
         break;
 
-      case 6:
-        if (estagnado == 4 &&
-            (playerPos.y() != robot->position().y() || playerPos.x() != robot->position().x())) {
-          playerPos = robot->position();
-          estado_atacante = 2;
-        } else {
-          estagnado++;
+      case 6: // destrava
+        // qDebug() << "travei";
+        if (robot->distTo(field->center()) < 70) {
+          estado_atacante = 1;
+          estagnado = 0;
         }
         break;
     }
