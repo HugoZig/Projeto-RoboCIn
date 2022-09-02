@@ -1,4 +1,3 @@
-boost
 clang-format
 doxygen
 g++

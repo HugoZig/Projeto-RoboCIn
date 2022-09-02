@@ -16,8 +16,13 @@ class CustomPlayer : public Processing {
   void exec() override;
 
  private:
-  struct Args {};
+  struct Args {
+    Parameters::Arg<int> openning = 9;
+    Parameters::Arg<int> dist = 2;
+  };
   Args args;
+
+  std::vector<Point> path{};
 
   struct Shared {
     SharedOptional<Frame> frame;
@@ -33,6 +38,8 @@ class CustomPlayer : public Processing {
 
   SSLNavigation sslNavigation;
   VSSNavigation vssNavigation;
+  std::vector<Point> calculaPathBot(Extends<QPointF> bola);
+  std::vector<Point> calculaPathTop(Extends<QPointF> bola);
 
  private slots:
   void receiveField(const Field& field);
