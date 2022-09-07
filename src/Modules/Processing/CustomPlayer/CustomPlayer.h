@@ -16,15 +16,15 @@ class CustomPlayer : public Processing {
   void exec() override;
 
  private:
-  struct Args {
+  struct Args { // Argumentos para ajustar no software do project-unification
     Parameters::Arg<int> openning = 9;
-    Parameters::Arg<int> dist = 8;   // 2 na parabola
-    Parameters::Arg<int> chis = 10;  // 15
-    Parameters::Arg<int> ipslon = 8; // 10
+    Parameters::Arg<int> dist = 8; // 2 na parabola
+    Parameters::Arg<int> x = 10;   // 15
+    Parameters::Arg<int> y = 8;    // 10
   };
   Args args;
 
-  std::vector<Point> path{};
+  std::vector<Point> path{}; // Vector que ira carregar os points
 
   struct Shared {
     SharedOptional<Frame> frame;
